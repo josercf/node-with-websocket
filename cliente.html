@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebSocket Client</title>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Cria uma nova conexão WebSocket.
+    const socket = new WebSocket('ws://localhost:3000/prediction-request');
+
+    // Função para adicionar mensagens ao log
+    function addMessage(message) {
+        const log = document.getElementById('log');
+        const msg = document.createElement('p');
+        msg.innerText = message;
+        log.appendChild(msg);
+    }
+
+    // Evento disparado quando a conexão é aberta
+    socket.onopen = function(event) {
+        addMessage('Connected to WebSocket server.');
+    };
+
+    // Evento disparado quando temos uma mensagem do servidor
+    socket.onmessage = function(event) {
+        addMessage('Message from server: ' + event.data);
+    };
+
+    // Enviar uma previsão usando o método POST via fetch API
+    const sendPrediction = (prediction) => {
+        fetch('http//localhost:3000/receive-prediction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(prediction),
+        })
+        .then(response => response.text())
+        .then(data => {
+            addMessage('Server response: ' + data);
+        })
+        .catch((error) => {
+            addMessage('Error: ' + error);
+        });
+    };
+
+    // Vincular eventos do formulário para enviar previsões
+    const form = document.getElementById('predictionForm');
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        const predictionData = {
+            input: document.getElementById('predictionInput').value
+        };
+        sendPrediction(predictionData);
+        form.reset();
+    };
+
+    // Função para enviar um pedido de predição via WebSocket
+    const requestPrediction = () => {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send('prediction-request');
+            addMessage('Prediction request sent via WebSocket.');
+        } else {
+            addMessage('WebSocket is not connected.');
+        }
+    };
+
+    // Vincular evento ao botão para solicitar predições via WebSocket
+    document.getElementById('requestPrediction').onclick = requestPrediction;
+});
+</script>
+</head>
+<body>
+<h1>WebSocket Client</h1>
+
+<!-- Formulário para enviar uma previsão -->
+<form id="predictionForm">
+    <input type="text" id="predictionInput" placeholder="Enter prediction data" required />
+    <button type="submit">Send Prediction</button>
+</form>
+
+<!-- Botão para solicitar previsões -->
+<button id="requestPrediction">Request Prediction</button>
+
+<!-- Log para visualizar mensagens -->
+<div id="log"></div>
+</body>
+</html>
